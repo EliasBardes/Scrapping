@@ -80,4 +80,49 @@ for lien_produit in liste_liens_produits:
         else:
             prix = ""
 
-    except
+        # description
+        description = ""
+
+        #description au json
+        try:
+            for s in soup_produit.find_all("script", type="application/ld+json"):
+                try:
+                    data = json.loads(s.string)
+                except Exception:
+                    continue
+                # data can be a list or dict
+                items = data if isinstance(data, list) else [data]
+                for item in items:
+                    if isinstance(item, dict) and item.get("@type") and "Product" in item.get("@type"):
+                        desc = item.get("description")
+                        if desc:
+                            description = desc.strip()
+                            break
+                if description:
+                    break
+        except Exception:
+            pass
+
+        #meta description
+        if not description:
+            meta_desc = soup_produit.find("meta", {"name": "description"})
+            if meta_desc:
+                description = meta_desc.get("content", "").strip()
+
+        #  classes courantes
+        if not description:
+            for classe in ["description", "product-description", "short-description", "product-short-description", "product-details"]:
+                el = soup_produit.find(class_=classe)
+                if el:
+                    description = el.get_text(" ", strip=True)
+                    break
+
+        # premier <p> important
+        if not description:
+            for p in soup_produit.find_all("p"):
+                texte = p.get_text(" ", strip=True)
+                if len(texte) > 60:
+                    description = texte
+                    break
+
+    except :
